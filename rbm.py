@@ -6,7 +6,7 @@ import math
 def sample_prob(probs):
     return tf.nn.relu(
         tf.sign(
-            probs - tf.random_uniform(probs.get_shape())))
+            probs - tf.random_uniform(tf.shape(probs))))
 
 
 class RBM(object):
