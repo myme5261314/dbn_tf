@@ -1,0 +1,4 @@
+*.swp
+MNIST_data/
+*.pyc
+.ropeproject/
