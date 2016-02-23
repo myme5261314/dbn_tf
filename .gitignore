@@ -2,3 +2,4 @@
 MNIST_data/
 *.pyc
 .ropeproject/
+*.png
