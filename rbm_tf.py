@@ -9,6 +9,7 @@
 """
 This file implement class RBM for tensorflow library.
 """
+import math
 import tensorflow as tf
 import numpy as np
 import Image
@@ -127,9 +128,25 @@ class RBM(object):
             image = Image.fromarray(
                 tile_raster_images(
                     X=self.w.T,
-                    img_shape=(28, 28),
-                    tile_shape=(25, 20),
+                    img_shape=(int(math.sqrt(self._input_size)),
+                               int(math.sqrt(self._input_size))),
+                    tile_shape=(int(math.sqrt(self._output_size)),
+                                int(math.sqrt(self._output_size))),
                     tile_spacing=(1, 1)
                 )
             )
-            image.save("rbm_class.png")
+            image.save("%s.png" % self._name)
+
+    def rbmup(self, X):
+        """TODO: Docstring for rbmup.
+
+        :X: TODO
+        :returns: TODO
+
+        """
+        input_X = tf.placeholder("float", [None, self._input_size])
+        out = tf.nn.sigmoid(tf.matmul(input_X, self._w) + self._hb)
+        with tf.Session() as sess:
+            sess.run(tf.initialize_all_variables())
+            return sess.run(out, feed_dict={
+                input_X: X, self._w: self.w, self._hb: self.hb})
