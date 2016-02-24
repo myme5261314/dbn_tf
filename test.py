@@ -13,12 +13,19 @@ Test some function.
 import input_data
 from opts import DLOption
 from dbn_tf import DBN
+from nn_tf import NN
+import numpy as np
 
 
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 trX, trY, teX, teY = mnist.train.images, mnist.train.labels, mnist.test.images,\
     mnist.test.labels
 
-opts = DLOption(1, 1., 100, 1., 0., False, 0.)
+opts = DLOption(10, 1., 100, .1, 0., False, 0.)
 dbn = DBN([400, 100], opts, trX)
 dbn.train()
+nn = NN([100], opts, trX, trY)
+nn = NN([400, 100], opts, trX, trY)
+nn.load_from_dbn(dbn)
+nn.train()
+print np.mean(np.argmax(teY, axis=1) == nn.predict(teX))
