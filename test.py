@@ -21,7 +21,7 @@ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 trX, trY, teX, teY = mnist.train.images, mnist.train.labels, mnist.test.images,\
     mnist.test.labels
 
-opts = DLOption(10, 1., 100, .1, 0., False, 0.)
+opts = DLOption(10, 1., 100, 0.0, 0., 0.)
 dbn = DBN([400, 100], opts, trX)
 dbn.train()
 nn = NN([100], opts, trX, trY)

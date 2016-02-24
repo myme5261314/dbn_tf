@@ -32,16 +32,12 @@ class RBM(object):
         self._input_size = input_size
         self._output_size = output_size
         self._opts = opts
-        with tf.name_scope("rbm_" + name):
-            self._w = tf.placeholder("float", [input_size, output_size])
-            self._hb = tf.placeholder("float", [output_size])
-            self._vb = tf.placeholder("float", [input_size])
-            self.init_w = np.zeros([input_size, output_size], np.float32)
-            self.init_hb = np.zeros([output_size], np.float32)
-            self.init_vb = np.zeros([input_size], np.float32)
-            self.w = np.zeros([input_size, output_size], np.float32)
-            self.hb = np.zeros([output_size], np.float32)
-            self.vb = np.zeros([input_size], np.float32)
+        self.init_w = np.zeros([input_size, output_size], np.float32)
+        self.init_hb = np.zeros([output_size], np.float32)
+        self.init_vb = np.zeros([input_size], np.float32)
+        self.w = np.zeros([input_size, output_size], np.float32)
+        self.hb = np.zeros([output_size], np.float32)
+        self.vb = np.zeros([input_size], np.float32)
 
     def reset_init_parameter(self, init_weights, init_hbias, init_vbias):
         """TODO: Docstring for reset_para.
@@ -56,16 +52,16 @@ class RBM(object):
         self.init_hb = init_hbias
         self.init_vb = init_vbias
 
-    def propup(self, visible):
+    def propup(self, visible, w, hb):
         """TODO: Docstring for propup.
 
         :visible: TODO
         :returns: TODO
 
         """
-        return tf.nn.sigmoid(tf.matmul(visible, self._w) + self._hb)
+        return tf.nn.sigmoid(tf.matmul(visible, w) + hb)
 
-    def propdown(self, hidden):
+    def propdown(self, hidden, w, vb):
         """TODO: Docstring for propdown.
 
         :hidden: TODO
@@ -73,7 +69,7 @@ class RBM(object):
 
         """
         return tf.nn.sigmoid(
-            tf.matmul(hidden, tf.transpose(self._w)) + self._vb)
+            tf.matmul(hidden, tf.transpose(w)) + vb)
 
     def sample_prob(self, probs):
         """TODO: Docstring for sample_prob.
@@ -91,18 +87,31 @@ class RBM(object):
         :returns: TODO
 
         """
+        _w = tf.placeholder("float", [self._input_size, self._output_size])
+        _hb = tf.placeholder("float", [self._output_size])
+        _vb = tf.placeholder("float", [self._input_size])
+        _vw = tf.placeholder("float", [self._input_size, self._output_size])
+        _vhb = tf.placeholder("float", [self._output_size])
+        _vvb = tf.placeholder("float", [self._input_size])
+        _current_vw = np.zeros(
+            [self._input_size, self._output_size], np.float32)
+        _current_vhb = np.zeros([self._output_size], np.float32)
+        _current_vvb = np.zeros([self._input_size], np.float32)
         v0 = tf.placeholder("float", [None, self._input_size])
-        h0 = self.sample_prob(self.propup(v0))
-        v1 = self.sample_prob(self.propdown(h0))
-        h1 = self.propup(v1)
+        h0 = self.sample_prob(self.propup(v0, _w, _hb))
+        v1 = self.sample_prob(self.propdown(h0, _w, _vb))
+        h1 = self.propup(v1, _w, _hb)
         positive_grad = tf.matmul(tf.transpose(v0), h0)
         negative_grad = tf.matmul(tf.transpose(v1), h1)
-        update_w = self._w * self._opts._momontum + self._opts._learning_rate *\
+        update_vw = _vw * self._opts._momentum + self._opts._learning_rate *\
             (positive_grad - negative_grad) / tf.to_float(tf.shape(v0)[0])
-        update_vb = self._vb * self._opts._momontum + \
+        update_vvb = _vvb * self._opts._momentum + \
             self._opts._learning_rate * tf.reduce_mean(v0 - v1, 0)
-        update_hb = self._hb * self._opts._momontum + \
+        update_vhb = _vhb * self._opts._momentum + \
             self._opts._learning_rate * tf.reduce_mean(h0 - h1, 0)
+        update_w = _w + _vw
+        update_vb = _vb + _vvb
+        update_hb = _hb + _vhb
         with tf.Session() as sess:
             sess.run(tf.initialize_all_variables())
             old_w = self.init_w
@@ -113,21 +122,24 @@ class RBM(object):
                                       range(self._opts._batchsize,
                                             len(X), self._opts._batchsize)):
                     batch = X[start:end]
-                    self.w = sess.run(update_w, feed_dict={
-                        v0: batch, self._w: old_w, self._hb: old_hb,
-                        self._vb: old_vb})
-                    self.hb = sess.run(update_hb, feed_dict={
-                        v0: batch, self._w: old_w, self._hb: old_hb,
-                        self._vb: old_vb})
-                    self.vb = sess.run(update_vb, feed_dict={
-                        v0: batch, self._w: old_w, self._hb: old_hb,
-                        self._vb: old_vb})
-                    old_w = self.w
-                    old_hb = self.hb
-                    old_vb = self.vb
+                    _current_vw = sess.run(update_vw, feed_dict={
+                        v0: batch, _w: old_w, _hb: old_hb, _vb: old_vb,
+                        _vw: _current_vw})
+                    _current_vhb = sess.run(update_vhb, feed_dict={
+                        v0: batch, _w: old_w, _hb: old_hb, _vb: old_vb,
+                        _vhb: _current_vhb})
+                    _current_vvb = sess.run(update_vvb, feed_dict={
+                        v0: batch, _w: old_w, _hb: old_hb, _vb: old_vb,
+                        _vvb: _current_vvb})
+                    old_w = sess.run(update_w, feed_dict={
+                                     _w: old_w, _vw: _current_vw})
+                    old_hb = sess.run(update_hb, feed_dict={
+                        _hb: old_hb, _vhb: _current_vhb})
+                    old_vb = sess.run(update_vb, feed_dict={
+                        _vb: old_vb, _vvb: _current_vvb})
                 image = Image.fromarray(
                     tile_raster_images(
-                        X=self.w.T,
+                        X=old_w.T,
                         img_shape=(int(math.sqrt(self._input_size)),
                                    int(math.sqrt(self._input_size))),
                         tile_shape=(int(math.sqrt(self._output_size)),
@@ -136,6 +148,9 @@ class RBM(object):
                     )
                 )
                 image.save("%s_%d.png" % (self._name, i))
+            self.w = old_w
+            self.hb = old_hb
+            self.vb = old_vb
 
     def rbmup(self, X):
         """TODO: Docstring for rbmup.
@@ -144,9 +159,10 @@ class RBM(object):
         :returns: TODO
 
         """
-        input_X = tf.placeholder("float", [None, self._input_size])
-        out = tf.nn.sigmoid(tf.matmul(input_X, self._w) + self._hb)
+        input_X = tf.constant(X)
+        _w = tf.constant(self.w)
+        _hb = tf.constant(self.hb)
+        out = tf.nn.sigmoid(tf.matmul(input_X, _w) + _hb)
         with tf.Session() as sess:
             sess.run(tf.initialize_all_variables())
-            return sess.run(out, feed_dict={
-                input_X: X, self._w: self.w, self._hb: self.hb})
+            return sess.run(out)

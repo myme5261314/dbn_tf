@@ -15,14 +15,14 @@ class DLOption(object):
 
     """Docstring for DLOption. """
 
-    def __init__(self, epoches, learning_rate, batchsize, momontum, penaltyL2,
-                 dropout, dropoutProb):
+    def __init__(self, epoches, learning_rate, batchsize, momentum, penaltyL2,
+                 dropoutProb):
         """TODO: to be defined1.
 
         :epoches: TODO
         :learning_rate: TODO
         :batchsize: TODO
-        :momontum: TODO
+        :momentum: TODO
         :penaltyL2: TODO
         :dropout: TODO
         :dropoutProb: TODO
@@ -31,7 +31,7 @@ class DLOption(object):
         self._epoches = epoches
         self._learning_rate = learning_rate
         self._batchsize = batchsize
-        self._momontum = momontum
+        self._momentum = momentum
         self._penaltyL2 = penaltyL2
-        self._dropout = dropout
         self._dropoutProb = dropoutProb
+
