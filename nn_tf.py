@@ -78,18 +78,22 @@ class NN(object):
         with tf.Session() as sess:
             sess.run(tf.initialize_all_variables())
             for i in range(self._opts._epoches):
-                for start, end in zip(range(0, len(self._X), self._opts._batchsize),
-                                    range(
-                                        self._opts._batchsize, len(self._X),
-                                        self._opts._batchsize)):
+                for start, end in zip(
+                    range(
+                        0, len(self._X),
+                        self._opts._batchsize),
+                    range(
+                        self._opts._batchsize, len(
+                            self._X),
+                        self._opts._batchsize)):
                     sess.run(train_op, feed_dict={
                         _a[0]: self._X[start:end], y: self._Y[start:end]})
                 for i in range(len(self._sizes) + 1):
                     self.w_list[i] = sess.run(_w[i])
                     self.b_list[i] = sess.run(_b[i])
                 print np.mean(np.argmax(self._Y, axis=1) ==
-                            sess.run(predict_op, feed_dict={
-                                _a[0]: self._X, y: self._Y}))
+                              sess.run(predict_op, feed_dict={
+                                  _a[0]: self._X, y: self._Y}))
 
     def predict(self, X):
         """TODO: Docstring for predict.
