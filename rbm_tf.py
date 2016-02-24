@@ -108,34 +108,34 @@ class RBM(object):
             old_w = self.init_w
             old_hb = self.init_hb
             old_vb = self.init_vb
-            for start, end in zip(
-                    range(0, len(X), self._opts._batchsize),
-                    range(
-                        self._opts._batchsize, len(X), self._opts._batchsize)):
-                batch = X[start:end]
-                self.w = sess.run(update_w, feed_dict={
-                                  v0: batch, self._w: old_w, self._hb: old_hb,
-                                  self._vb: old_vb})
-                self.hb = sess.run(update_hb, feed_dict={
-                    v0: batch, self._w: old_w, self._hb: old_hb,
-                    self._vb: old_vb})
-                self.vb = sess.run(update_vb, feed_dict={
-                    v0: batch, self._w: old_w, self._hb: old_hb,
-                    self._vb: old_vb})
-                old_w = self.w
-                old_hb = self.hb
-                old_vb = self.vb
-            image = Image.fromarray(
-                tile_raster_images(
-                    X=self.w.T,
-                    img_shape=(int(math.sqrt(self._input_size)),
-                               int(math.sqrt(self._input_size))),
-                    tile_shape=(int(math.sqrt(self._output_size)),
-                                int(math.sqrt(self._output_size))),
-                    tile_spacing=(1, 1)
+            for i in range(self._opts._epoches):
+                for start, end in zip(range(0, len(X), self._opts._batchsize),
+                                      range(self._opts._batchsize,
+                                            len(X), self._opts._batchsize)):
+                    batch = X[start:end]
+                    self.w = sess.run(update_w, feed_dict={
+                        v0: batch, self._w: old_w, self._hb: old_hb,
+                        self._vb: old_vb})
+                    self.hb = sess.run(update_hb, feed_dict={
+                        v0: batch, self._w: old_w, self._hb: old_hb,
+                        self._vb: old_vb})
+                    self.vb = sess.run(update_vb, feed_dict={
+                        v0: batch, self._w: old_w, self._hb: old_hb,
+                        self._vb: old_vb})
+                    old_w = self.w
+                    old_hb = self.hb
+                    old_vb = self.vb
+                image = Image.fromarray(
+                    tile_raster_images(
+                        X=self.w.T,
+                        img_shape=(int(math.sqrt(self._input_size)),
+                                   int(math.sqrt(self._input_size))),
+                        tile_shape=(int(math.sqrt(self._output_size)),
+                                    int(math.sqrt(self._output_size))),
+                        tile_spacing=(1, 1)
+                    )
                 )
-            )
-            image.save("%s.png" % self._name)
+                image.save("%s_%d.png" % (self._name, i))
 
     def rbmup(self, X):
         """TODO: Docstring for rbmup.
