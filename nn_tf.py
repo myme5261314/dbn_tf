@@ -72,8 +72,8 @@ class NN(object):
         for i in range(1, len(self._sizes) + 2):
             _a[i] = tf.nn.sigmoid(tf.matmul(_a[i - 1], _w[i - 1]) + _b[i - 1])
         cost = tf.reduce_mean(tf.square(_a[-1] - y))
-        train_op = tf.train.GradientDescentOptimizer(
-            self._opts._learning_rate).minimize(cost)
+        train_op = tf.train.MomentumOptimizer(
+            self._opts._learning_rate, self._opts._momentum).minimize(cost)
         predict_op = tf.argmax(_a[-1], 1)
         with tf.Session() as sess:
             sess.run(tf.initialize_all_variables())
